@@ -1,0 +1,434 @@
+
+Auto_fuel_pump.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         0000022c  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00800060  00800060  000002c1  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000003  00800060  00800060  000002c0  2**0
+                  ALLOC
+  3 .eeprom       00000001  00810000  00810000  000002c0  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  4 .comment      00000030  00000000  00000000  000002c1  2**0
+                  CONTENTS, READONLY
+  5 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000002f4  2**2
+                  CONTENTS, READONLY
+  6 .debug_aranges 00000070  00000000  00000000  00000330  2**3
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_info   000005ae  00000000  00000000  000003a0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_abbrev 000003b4  00000000  00000000  0000094e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_line   00000516  00000000  00000000  00000d02  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_frame  00000054  00000000  00000000  00001218  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_str    0000029b  00000000  00000000  0000126c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_loc    0000003c  00000000  00000000  00001507  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 13 .debug_ranges 00000020  00000000  00000000  00001543  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	09 c0       	rjmp	.+18     	; 0x14 <__ctors_end>
+   2:	16 c0       	rjmp	.+44     	; 0x30 <__bad_interrupt>
+   4:	15 c0       	rjmp	.+42     	; 0x30 <__bad_interrupt>
+   6:	14 c0       	rjmp	.+40     	; 0x30 <__bad_interrupt>
+   8:	13 c0       	rjmp	.+38     	; 0x30 <__bad_interrupt>
+   a:	12 c0       	rjmp	.+36     	; 0x30 <__bad_interrupt>
+   c:	db c0       	rjmp	.+438    	; 0x1c4 <__vector_6>
+   e:	10 c0       	rjmp	.+32     	; 0x30 <__bad_interrupt>
+  10:	0f c0       	rjmp	.+30     	; 0x30 <__bad_interrupt>
+  12:	0e c0       	rjmp	.+28     	; 0x30 <__bad_interrupt>
+
+00000014 <__ctors_end>:
+  14:	11 24       	eor	r1, r1
+  16:	1f be       	out	0x3f, r1	; 63
+  18:	cf e9       	ldi	r28, 0x9F	; 159
+  1a:	cd bf       	out	0x3d, r28	; 61
+
+0000001c <__do_clear_bss>:
+  1c:	20 e0       	ldi	r18, 0x00	; 0
+  1e:	a0 e6       	ldi	r26, 0x60	; 96
+  20:	b0 e0       	ldi	r27, 0x00	; 0
+  22:	01 c0       	rjmp	.+2      	; 0x26 <.do_clear_bss_start>
+
+00000024 <.do_clear_bss_loop>:
+  24:	1d 92       	st	X+, r1
+
+00000026 <.do_clear_bss_start>:
+  26:	a3 36       	cpi	r26, 0x63	; 99
+  28:	b2 07       	cpc	r27, r18
+  2a:	e1 f7       	brne	.-8      	; 0x24 <.do_clear_bss_loop>
+  2c:	25 d0       	rcall	.+74     	; 0x78 <main>
+  2e:	fc c0       	rjmp	.+504    	; 0x228 <_exit>
+
+00000030 <__bad_interrupt>:
+  30:	e7 cf       	rjmp	.-50     	; 0x0 <__vectors>
+
+00000032 <Presets>:
+
+		/*-------------------------------- Предустановки ------------------------------------*/
+
+void Presets (void)
+{
+	DDRB |= (1<<OUT) | (1<<LED);
+  32:	87 b3       	in	r24, 0x17	; 23
+  34:	86 60       	ori	r24, 0x06	; 6
+  36:	87 bb       	out	0x17, r24	; 23
+	DDRB &=~ (1<<BTN);
+  38:	b8 98       	cbi	0x17, 0	; 23
+	PORTB |= (1<<BTN);
+  3a:	c0 9a       	sbi	0x18, 0	; 24
+	Pump_OFF;
+  3c:	c2 98       	cbi	0x18, 2	; 24
+	Led_OFF;
+  3e:	c1 98       	cbi	0x18, 1	; 24
+	
+	TCCR0B 	|=	(1<<CS02) | (1<<CS00);												// установка предделителя таймера (табл. 11.9 стр. 74) 	600000/1024~=586 Hz
+  40:	83 b7       	in	r24, 0x33	; 51
+  42:	85 60       	ori	r24, 0x05	; 5
+  44:	83 bf       	out	0x33, r24	; 51
+	TCCR0A 	|= 	(1<<WGM01);															// выбор режима работы таймера (табл. 11.8 стр. 73)		CTC
+  46:	8f b5       	in	r24, 0x2f	; 47
+  48:	82 60       	ori	r24, 0x02	; 2
+  4a:	8f bd       	out	0x2f, r24	; 47
+	TIMSK0 	|=	(1<<OCIE0A);														// прерывание по совпадению A (11.9.6 стр. 75)
+  4c:	89 b7       	in	r24, 0x39	; 57
+  4e:	84 60       	ori	r24, 0x04	; 4
+  50:	89 bf       	out	0x39, r24	; 57
+	OCR0A 	= 	22;																	// конечное значение для счетчика (11.9.4 стр. 75)  	586/(22+1)~=25.5 Hz (39 ms)
+  52:	86 e1       	ldi	r24, 0x16	; 22
+  54:	86 bf       	out	0x36, r24	; 54
+	
+	if ((PINB & (1<<BTN)) == 0)														// если при включении обнаружена нажатая кнопка
+  56:	b0 99       	sbic	0x16, 0	; 22
+  58:	08 c0       	rjmp	.+16     	; 0x6a <__SREG__+0x2b>
+	{
+		Flag_byte |= (1<<_setting_mode_on);											// установка флага режима настройки
+  5a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  5e:	88 60       	ori	r24, 0x08	; 8
+  60:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+		Delay_Pump_ON = 0;
+  64:	10 92 62 00 	sts	0x0062, r1	; 0x800062 <Delay_Pump_ON>
+  68:	05 c0       	rjmp	.+10     	; 0x74 <__SREG__+0x35>
+	}
+	else																			// в обычном режиме
+	{	
+		Delay_Pump_ON = eeprom_read_byte (& Delay_Pump_ON_EE);						// считывание данных с памяти EEPROM
+  6a:	80 e0       	ldi	r24, 0x00	; 0
+  6c:	90 e0       	ldi	r25, 0x00	; 0
+  6e:	c8 d0       	rcall	.+400    	; 0x200 <eeprom_read_byte>
+  70:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <Delay_Pump_ON>
+	}
+	
+	asm ("sei");																	// разрешение прерываний (стр. 161)
+  74:	78 94       	sei
+  76:	08 95       	ret
+
+00000078 <main>:
+	*                                     ОСНОВНАЯ ФУНКЦИЯ                                        *
+	**********************************************************************************************/
+
+int main (void)
+{
+	Presets();
+  78:	dc df       	rcall	.-72     	; 0x32 <Presets>
+			{
+				asm("cli");
+				Pump_ON;															// включение насоса
+				Led_ON;
+				Flag_byte |= (1<<_pump_is_on);										// установка флага
+				CountTime = Delay_btn;												// установка счетчика для постоянного срабатывания при нажатой кнопке
+  7a:	c6 e2       	ldi	r28, 0x26	; 38
+		{
+			if ((PINB & (1<<BTN)) == 0)												// если нажата кнопка
+			{
+				if (CountTime >= 13)												// когда счетчик = 13 / 25.5 Hz (из настроек таймера) = 0,5 сек.
+				{
+					PORTB ^= (1<<LED);												// мигание светодиодом каждые 0.5 сек.
+  7c:	d2 e0       	ldi	r29, 0x02	; 2
+{
+	Presets();
+
+	while (1)
+	{
+		if ((Flag_byte & (1<<_setting_mode_on)) == 0)							//если не активен режим настройки
+  7e:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  82:	83 fd       	sbrc	r24, 3
+  84:	78 c0       	rjmp	.+240    	; 0x176 <__stack+0xd7>
+		{
+			if (Delay_Pump_ON != 0)													// если задержка не нулевая
+  86:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <Delay_Pump_ON>
+  8a:	88 23       	and	r24, r24
+  8c:	59 f1       	breq	.+86     	; 0xe4 <__stack+0x45>
+			{
+				if ((Flag_byte == 0) && (CountTime >= Delay_to_start))				// если начало работы программы и закончено время задержки перед включением
+  8e:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  92:	81 11       	cpse	r24, r1
+  94:	0f c0       	rjmp	.+30     	; 0xb4 <__stack+0x15>
+  96:	80 91 61 00 	lds	r24, 0x0061	; 0x800061 <CountTime>
+  9a:	89 31       	cpi	r24, 0x19	; 25
+  9c:	58 f0       	brcs	.+22     	; 0xb4 <__stack+0x15>
+				{
+					asm("cli");
+  9e:	f8 94       	cli
+					Pump_ON;														// включение насоса
+  a0:	c2 9a       	sbi	0x18, 2	; 24
+					Led_ON;
+  a2:	c1 9a       	sbi	0x18, 1	; 24
+					Flag_byte |= (1<<_pump_is_on);									// установка флага
+  a4:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  a8:	81 60       	ori	r24, 0x01	; 1
+  aa:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+					CountTime = 0;													// обнуление счетчика
+  ae:	10 92 61 00 	sts	0x0061, r1	; 0x800061 <CountTime>
+					asm("sei");
+  b2:	78 94       	sei
+				}
+		
+				if ((Flag_byte & (1<<_pump_is_on)) && (CountTime >= Delay_Pump_ON))	// если насос включен и закончилось время работы
+  b4:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  b8:	80 ff       	sbrs	r24, 0
+  ba:	14 c0       	rjmp	.+40     	; 0xe4 <__stack+0x45>
+  bc:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <CountTime>
+  c0:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <Delay_Pump_ON>
+  c4:	98 17       	cp	r25, r24
+  c6:	70 f0       	brcs	.+28     	; 0xe4 <__stack+0x45>
+				{
+					asm("cli");
+  c8:	f8 94       	cli
+					Pump_OFF;														// выключение насоса
+  ca:	c2 98       	cbi	0x18, 2	; 24
+					Led_OFF;
+  cc:	c1 98       	cbi	0x18, 1	; 24
+					Flag_byte &=~ (1<<_pump_is_on);									// снятие флага включенного насоса
+  ce:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  d2:	8e 7f       	andi	r24, 0xFE	; 254
+  d4:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+					Flag_byte |= (1<<_pumping_is_done);								// установка флага законченной работы
+  d8:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  dc:	82 60       	ori	r24, 0x02	; 2
+  de:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+					asm("sei");
+  e2:	78 94       	sei
+				}
+			}
+		
+			if (((PINB & (1<<BTN)) == 0) && ((Flag_byte & (1<<_btn_pressed)) == 0))	// если нажата кнопка (ранее не была нажата)
+  e4:	b0 99       	sbic	0x16, 0	; 22
+  e6:	19 c0       	rjmp	.+50     	; 0x11a <__stack+0x7b>
+  e8:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  ec:	82 fd       	sbrc	r24, 2
+  ee:	15 c0       	rjmp	.+42     	; 0x11a <__stack+0x7b>
+			{
+				asm("cli");
+  f0:	f8 94       	cli
+				Pump_OFF;															// выключение насоса
+  f2:	c2 98       	cbi	0x18, 2	; 24
+				Led_OFF;
+  f4:	c1 98       	cbi	0x18, 1	; 24
+				Flag_byte &=~ (1<<_pump_is_on);										// снятие флага включенного насоса
+  f6:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  fa:	8e 7f       	andi	r24, 0xFE	; 254
+  fc:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				Flag_byte |= (1<<_pumping_is_done);									// установка флага законченной работы
+ 100:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 104:	82 60       	ori	r24, 0x02	; 2
+ 106:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				Flag_byte |= (1<<_btn_pressed);										// установка флага нажатой кнопки
+ 10a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 10e:	84 60       	ori	r24, 0x04	; 4
+ 110:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				CountTime = 0;														// обнуление счетчика
+ 114:	10 92 61 00 	sts	0x0061, r1	; 0x800061 <CountTime>
+				asm("sei");
+ 118:	78 94       	sei
+			}
+		
+			if ((Flag_byte & (1<<_btn_pressed)) && (CountTime >= Delay_btn))		// если нажата кнопка и прошло время задержки кнопки
+ 11a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 11e:	82 ff       	sbrs	r24, 2
+ 120:	0f c0       	rjmp	.+30     	; 0x140 <__stack+0xa1>
+ 122:	80 91 61 00 	lds	r24, 0x0061	; 0x800061 <CountTime>
+ 126:	86 32       	cpi	r24, 0x26	; 38
+ 128:	58 f0       	brcs	.+22     	; 0x140 <__stack+0xa1>
+			{
+				asm("cli");
+ 12a:	f8 94       	cli
+				Pump_ON;															// включение насоса
+ 12c:	c2 9a       	sbi	0x18, 2	; 24
+				Led_ON;
+ 12e:	c1 9a       	sbi	0x18, 1	; 24
+				Flag_byte |= (1<<_pump_is_on);										// установка флага
+ 130:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 134:	81 60       	ori	r24, 0x01	; 1
+ 136:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				CountTime = Delay_btn;												// установка счетчика для постоянного срабатывания при нажатой кнопке
+ 13a:	c0 93 61 00 	sts	0x0061, r28	; 0x800061 <CountTime>
+				asm("sei");
+ 13e:	78 94       	sei
+			}
+		
+			if ((PINB & (1<<BTN)) && (Flag_byte & (1<<_btn_pressed)))				// если кнопка не нажата, но была ранее нажата
+ 140:	b0 9b       	sbis	0x16, 0	; 22
+ 142:	19 c0       	rjmp	.+50     	; 0x176 <__stack+0xd7>
+ 144:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 148:	82 ff       	sbrs	r24, 2
+ 14a:	15 c0       	rjmp	.+42     	; 0x176 <__stack+0xd7>
+			{
+				asm("cli");
+ 14c:	f8 94       	cli
+				Pump_OFF;															// выключение насоса
+ 14e:	c2 98       	cbi	0x18, 2	; 24
+				Led_OFF;
+ 150:	c1 98       	cbi	0x18, 1	; 24
+				Flag_byte &=~ (1<<_pump_is_on);										// снятие флага включенного насоса
+ 152:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 156:	8e 7f       	andi	r24, 0xFE	; 254
+ 158:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				Flag_byte |= (1<<_pumping_is_done);									// установка флага законченной работы
+ 15c:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 160:	82 60       	ori	r24, 0x02	; 2
+ 162:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				Flag_byte &=~ (1<<_btn_pressed);									// сброс флага нажатой кнопки
+ 166:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 16a:	8b 7f       	andi	r24, 0xFB	; 251
+ 16c:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				CountTime = 0;
+ 170:	10 92 61 00 	sts	0x0061, r1	; 0x800061 <CountTime>
+				asm("sei");
+ 174:	78 94       	sei
+			}
+		} 
+		
+		if (Flag_byte & (1<<_setting_mode_on))									// если активен режим настройки
+ 176:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 17a:	83 ff       	sbrs	r24, 3
+ 17c:	21 c0       	rjmp	.+66     	; 0x1c0 <__stack+0x121>
+		{
+			if ((PINB & (1<<BTN)) == 0)												// если нажата кнопка
+ 17e:	b0 99       	sbic	0x16, 0	; 22
+ 180:	0a c0       	rjmp	.+20     	; 0x196 <__stack+0xf7>
+			{
+				if (CountTime >= 13)												// когда счетчик = 13 / 25.5 Hz (из настроек таймера) = 0,5 сек.
+ 182:	80 91 61 00 	lds	r24, 0x0061	; 0x800061 <CountTime>
+ 186:	8d 30       	cpi	r24, 0x0D	; 13
+ 188:	d8 f0       	brcs	.+54     	; 0x1c0 <__stack+0x121>
+				{
+					PORTB ^= (1<<LED);												// мигание светодиодом каждые 0.5 сек.
+ 18a:	88 b3       	in	r24, 0x18	; 24
+ 18c:	8d 27       	eor	r24, r29
+ 18e:	88 bb       	out	0x18, r24	; 24
+					CountTime = 0;
+ 190:	10 92 61 00 	sts	0x0061, r1	; 0x800061 <CountTime>
+ 194:	15 c0       	rjmp	.+42     	; 0x1c0 <__stack+0x121>
+				}
+			}
+			else
+			{
+				asm("cli");
+ 196:	f8 94       	cli
+				Led_OFF;
+ 198:	c1 98       	cbi	0x18, 1	; 24
+				Flag_byte &=~ (1<<_setting_mode_on);
+ 19a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 19e:	87 7f       	andi	r24, 0xF7	; 247
+ 1a0:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+				if (Delay_Pump_ON < 15) Delay_Pump_ON = 0;
+ 1a4:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <Delay_Pump_ON>
+ 1a8:	8f 30       	cpi	r24, 0x0F	; 15
+ 1aa:	10 f4       	brcc	.+4      	; 0x1b0 <__stack+0x111>
+ 1ac:	10 92 62 00 	sts	0x0062, r1	; 0x800062 <Delay_Pump_ON>
+				eeprom_write_byte (& Delay_Pump_ON_EE, Delay_Pump_ON);
+ 1b0:	60 91 62 00 	lds	r22, 0x0062	; 0x800062 <Delay_Pump_ON>
+ 1b4:	80 e0       	ldi	r24, 0x00	; 0
+ 1b6:	90 e0       	ldi	r25, 0x00	; 0
+ 1b8:	2a d0       	rcall	.+84     	; 0x20e <eeprom_write_byte>
+				Flag_byte = 0;
+ 1ba:	10 92 60 00 	sts	0x0060, r1	; 0x800060 <_edata>
+				asm("sei");
+ 1be:	78 94       	sei
+			}
+		}
+				
+		asm("nop");
+ 1c0:	00 00       	nop
+	}
+ 1c2:	5d cf       	rjmp	.-326    	; 0x7e <main+0x6>
+
+000001c4 <__vector_6>:
+	**********************************************************************************************/
+
+		/*--------------------------- По совпадению счетчика А ------------------------------*/
+
+ISR (TIM0_COMPA_vect)																// 39 ms
+{
+ 1c4:	1f 92       	push	r1
+ 1c6:	0f 92       	push	r0
+ 1c8:	0f b6       	in	r0, 0x3f	; 63
+ 1ca:	0f 92       	push	r0
+ 1cc:	11 24       	eor	r1, r1
+ 1ce:	8f 93       	push	r24
+	CountTime ++;																	// инкремент счетчики
+ 1d0:	80 91 61 00 	lds	r24, 0x0061	; 0x800061 <CountTime>
+ 1d4:	8f 5f       	subi	r24, 0xFF	; 255
+ 1d6:	80 93 61 00 	sts	0x0061, r24	; 0x800061 <CountTime>
+	
+	if (Flag_byte & (1<<_setting_mode_on))											// если активен режим настройки
+ 1da:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 1de:	83 ff       	sbrs	r24, 3
+ 1e0:	09 c0       	rjmp	.+18     	; 0x1f4 <__vector_6+0x30>
+	{
+		if (Delay_Pump_ON < 255)
+ 1e2:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <Delay_Pump_ON>
+ 1e6:	8f 3f       	cpi	r24, 0xFF	; 255
+ 1e8:	29 f0       	breq	.+10     	; 0x1f4 <__vector_6+0x30>
+		Delay_Pump_ON ++;															// инкремент задержки (ограничение - max 255)
+ 1ea:	80 91 62 00 	lds	r24, 0x0062	; 0x800062 <Delay_Pump_ON>
+ 1ee:	8f 5f       	subi	r24, 0xFF	; 255
+ 1f0:	80 93 62 00 	sts	0x0062, r24	; 0x800062 <Delay_Pump_ON>
+	}
+ 1f4:	8f 91       	pop	r24
+ 1f6:	0f 90       	pop	r0
+ 1f8:	0f be       	out	0x3f, r0	; 63
+ 1fa:	0f 90       	pop	r0
+ 1fc:	1f 90       	pop	r1
+ 1fe:	18 95       	reti
+
+00000200 <eeprom_read_byte>:
+ 200:	e1 99       	sbic	0x1c, 1	; 28
+ 202:	fe cf       	rjmp	.-4      	; 0x200 <eeprom_read_byte>
+ 204:	8e bb       	out	0x1e, r24	; 30
+ 206:	e0 9a       	sbi	0x1c, 0	; 28
+ 208:	99 27       	eor	r25, r25
+ 20a:	8d b3       	in	r24, 0x1d	; 29
+ 20c:	08 95       	ret
+
+0000020e <eeprom_write_byte>:
+ 20e:	26 2f       	mov	r18, r22
+
+00000210 <eeprom_write_r18>:
+ 210:	e1 99       	sbic	0x1c, 1	; 28
+ 212:	fe cf       	rjmp	.-4      	; 0x210 <eeprom_write_r18>
+ 214:	1c ba       	out	0x1c, r1	; 28
+ 216:	8e bb       	out	0x1e, r24	; 30
+ 218:	2d bb       	out	0x1d, r18	; 29
+ 21a:	0f b6       	in	r0, 0x3f	; 63
+ 21c:	f8 94       	cli
+ 21e:	e2 9a       	sbi	0x1c, 2	; 28
+ 220:	e1 9a       	sbi	0x1c, 1	; 28
+ 222:	0f be       	out	0x3f, r0	; 63
+ 224:	01 96       	adiw	r24, 0x01	; 1
+ 226:	08 95       	ret
+
+00000228 <_exit>:
+ 228:	f8 94       	cli
+
+0000022a <__stop_program>:
+ 22a:	ff cf       	rjmp	.-2      	; 0x22a <__stop_program>
